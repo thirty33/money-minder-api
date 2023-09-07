@@ -1,0 +1,110 @@
+service: money-minder-api
+
+useDotenv: true
+
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: ${opt:stage, 'dev'}
+  region: ${opt:region, 'us-west-2'}
+  architecture: x86_64
+  # apiGateway:
+  #   apiKeys:
+  #     - money-minder-primary-key
+  # environment:
+  #   BUCKET: !GetAtt S3Bucket.Arn
+  #   SECRET_EGG: ${ssm:/SECRET_EGG}
+  
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-dynamodb
+  - serverless-offline
+  - serverless-ignore
+  - serverless-python-requirements
+package:
+  individually: true
+  patterns:
+    - "!*/**"
+    - "!**"
+  exclude:
+    - .env/**
+
+custom:
+  dynamodb:
+  # If you only want to use DynamoDB Local in some stages, declare them here
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      migrate: true
+    # Uncomment only if you already have a DynamoDB running locally
+    # noStart: true
+  pythonRequirements:
+    dockerizePip: false
+    # dockerImage: public.ecr.aws/sam/build-python3.10:latest-arm64
+    # dockerRunCmdExtraArgs: [ '--platform', 'linux/arm64/v8' ]
+    # slim: true
+    layer:
+      name: FastAPI-Lambda-Function
+      description: FastAPI-Lambda-Function API Layer
+      compatibleRuntimes:
+        - "python3.11"
+    # useDownloadCache: true
+    # useStaticCache: true
+
+
+resources:
+  Resources:
+    Music:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${env:table_name}
+        AttributeDefinitions:
+          - AttributeName: Artist
+            AttributeType: S
+          - AttributeName: SongTitle
+            AttributeType: S
+          - AttributeName: AlbumTitle
+            AttributeType: S
+        KeySchema:
+          - AttributeName: Artist
+            KeyType: HASH
+          - AttributeName: SongTitle
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        LocalSecondaryIndexes:
+          - IndexName: AlbumTitleIndex
+            KeySchema: 
+              - AttributeName: Artist
+                KeyType: HASH
+              - AttributeName: AlbumTitle
+                KeyType: RANGE
+            Projection: 
+              NonKeyAttributes: 
+                - Genre
+                - Year
+              ProjectionType: INCLUDE
+
+functions:
+  app:
+    handler: lambdas/getUsers/handler.handler
+    runtime: python3.11
+    environment:
+      STAGE: ${self:provider.stage}
+      runtime: "python3.11"
+    layers:
+      - { Ref: PythonRequirementsLambdaLayer }
+    package:
+      patterns:
+        - "lambdas/getUsers/**"
+    events:
+      - http:
+          method: any
+          path: /{proxy+}
+          cors: true
+
+
