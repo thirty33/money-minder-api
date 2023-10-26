@@ -1,3 +1,5 @@
 .env
 .git/*
 nodejs-layer-zip-zip
+/fast-env
+/fast-env/*

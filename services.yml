@@ -204,9 +204,13 @@ Resources:
                       - iam:TagRole
                       - iam:UntagRole
                       - iam:GetRole
+                      - dynamodb:DeleteItem
+                      - dynamodb:UpdateItem
+                      - dynamodb:GetItem
+                      - dynamodb:PutItem
                     Resource:
-                      - !Sub 'arn:aws:iam::${AWS::AccountId}:role/example-project-*'
                       - !Sub 'arn:aws:iam::${AWS::AccountId}:role/money-minder-api-*'
+                      - !Sub 'arn:aws:iam::${AWS::AccountId}:role/money-minder-api-*/*'
             - PolicyName: DeployAPIGateway
               PolicyDocument:
                 Version: '2012-10-17'
@@ -282,6 +286,10 @@ Resources:
                       - dynamodb:UpdateTable
                       - dynamodb:UpdateTableReplicaAutoScaling
                       - dynamodb:UpdateTimeToLive
+                      - dynamodb:DeleteItem
+                      - dynamodb:UpdateItem
+                      - dynamodb:GetItem
+                      - dynamodb:PutItem
                     Resource:
                       - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*'
                       - !Sub 'arn:aws:dynamodb::${AWS::AccountId}:global-table/*'

@@ -5,7 +5,7 @@ useDotenv: true
 
 provider:
   name: aws
-  runtime: nodejs14.x
+  runtime: python3.8
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-west-2'}
   architecture: x86_64
@@ -15,13 +15,19 @@ provider:
   # environment:
   #   BUCKET: !GetAtt S3Bucket.Arn
   #   SECRET_EGG: ${ssm:/SECRET_EGG}
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action: 'dynamodb:*'
+          Resource: !GetAtt Transaction.Arn
   
 plugins:
   - serverless-dotenv-plugin
   - serverless-dynamodb
-  - serverless-offline
   - serverless-ignore
   - serverless-python-requirements
+  - serverless-offline
 package:
   individually: true
   patterns:
@@ -43,68 +49,70 @@ custom:
     # noStart: true
   pythonRequirements:
     dockerizePip: false
-    # dockerImage: public.ecr.aws/sam/build-python3.10:latest-arm64
+    # dockerImage: public.ecr.aws/sam/build-python3.8:latest-arm64
     # dockerRunCmdExtraArgs: [ '--platform', 'linux/arm64/v8' ]
     # slim: true
     layer:
       name: FastAPI-Lambda-Function
       description: FastAPI-Lambda-Function API Layer
       compatibleRuntimes:
-        - "python3.11"
+        - python3.8
     # useDownloadCache: true
     # useStaticCache: true
 
 
 resources:
   Resources:
-    Music:
+    Transaction:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${env:table_name}
+        TableName: ${env:table_transaction_name}
         AttributeDefinitions:
-          - AttributeName: Artist
+          - AttributeName: Title
             AttributeType: S
-          - AttributeName: SongTitle
-            AttributeType: S
-          - AttributeName: AlbumTitle
+          - AttributeName: Uid
             AttributeType: S
         KeySchema:
-          - AttributeName: Artist
+          - AttributeName: Title
             KeyType: HASH
-          - AttributeName: SongTitle
+          - AttributeName: Uid
             KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
-        LocalSecondaryIndexes:
-          - IndexName: AlbumTitleIndex
-            KeySchema: 
-              - AttributeName: Artist
-                KeyType: HASH
-              - AttributeName: AlbumTitle
-                KeyType: RANGE
-            Projection: 
-              NonKeyAttributes: 
-                - Genre
-                - Year
-              ProjectionType: INCLUDE
+
 
 functions:
+  # app:
+  #   handler: lambdas/getUsers/handler.handler
+  #   runtime: python3.8
+  #   environment:
+  #     STAGE: ${self:provider.stage}
+  #   layers:
+  #     - { Ref: PythonRequirementsLambdaLayer }
+  #   package:
+  #     patterns:
+  #       - "lambdas/getUsers/**"
+  #   events:
+  #     - http:
+  #         method: any
+  #         path: /{proxy+}
+  #         cors: true
   app:
-    handler: lambdas/getUsers/handler.handler
-    runtime: python3.11
+    handler: lambdas/transaction/handler-transaction.handler
+    runtime: python3.8
     environment:
       STAGE: ${self:provider.stage}
-      runtime: "python3.11"
     layers:
       - { Ref: PythonRequirementsLambdaLayer }
     package:
       patterns:
-        - "lambdas/getUsers/**"
+        - "lambdas/transaction/**"
     events:
       - http:
           method: any
           path: /{proxy+}
           cors: true
+  
 
 
