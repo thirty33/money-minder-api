@@ -15,12 +15,21 @@ provider:
   # environment:
   #   BUCKET: !GetAtt S3Bucket.Arn
   #   SECRET_EGG: ${ssm:/SECRET_EGG}
+  environment:
+    # user_pool_id: { Ref: UserPool }
+    # client_id: { Ref: UserClient }
   iam:
     role:
       statements:
         - Effect: Allow
           Action: 'dynamodb:*'
           Resource: !GetAtt Transaction.Arn
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminInitiateAuth
+            - cognito-idp:AdminCreateUser
+            - cognito-idp:AdminSetUserPassword
+          Resource: "*"
   
 plugins:
   - serverless-dotenv-plugin
@@ -80,24 +89,53 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
+    User:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${env:user_transaction_name}
+        AttributeDefinitions:
+          - AttributeName: Email
+            AttributeType: S
+          - AttributeName: Uid
+            AttributeType: S
+        KeySchema:
+          - AttributeName: Email
+            KeyType: HASH
+          - AttributeName: Uid
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+    UserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: serverless-auth-pool
+        Schema:
+          - Name: email
+            Required: true
+            Mutable: true
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 6
+        AutoVerifiedAttributes: ["email"]
 
+    UserClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: user-pool-ui
+        GenerateSecret: false
+        UserPoolId: { Ref: UserPool }
+        AccessTokenValidity: 5
+        IdTokenValidity: 5
+        ExplicitAuthFlows:
+          - "ADMIN_NO_SRP_AUTH"
 
 functions:
-  # app:
-  #   handler: lambdas/getUsers/handler.handler
-  #   runtime: python3.8
-  #   environment:
-  #     STAGE: ${self:provider.stage}
-  #   layers:
-  #     - { Ref: PythonRequirementsLambdaLayer }
+  # custom-authorizer:
+  #   handler: lambdas/custom-authorizer/handler.authorize
   #   package:
   #     patterns:
-  #       - "lambdas/getUsers/**"
-  #   events:
-  #     - http:
-  #         method: any
-  #         path: /{proxy+}
-  #         cors: true
+  #       - "lambdas/custom-authorizer/**"
   app:
     handler: lambdas/transaction/handler-transaction.handler
     runtime: python3.8
@@ -113,6 +151,15 @@ functions:
           method: any
           path: /{proxy+}
           cors: true
+          # authorizer:
+          #   name: PrivateAuthorizer
+          #   type: COGNITO_USER_POOLS
+          #   arn:
+          #     Fn::GetAtt:
+          #       - UserPool
+          #       - Arn
+          #   claims:
+          #     - email
   
 
 

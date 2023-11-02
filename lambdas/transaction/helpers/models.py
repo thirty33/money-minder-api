@@ -1,9 +1,9 @@
 from fastapi.security import HTTPBearer
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, validator
 from typing import Any, Coroutine, Optional, List
 from lambdas.transaction.helpers.jwt.jwt_manager import create_token, validate_token
 from fastapi import FastAPI, Body, HTTPException, Path, Query, Depends, Request
-
+import re
 class JWTBearer(HTTPBearer):
     async def __call__(self, request: Request):
         auth = await super().__call__(request)
@@ -29,7 +29,7 @@ class Movie(BaseModel):
     category: str = Field(min_length=5, max_length=15)
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "id": 1,
                 "title": "Movie title",
@@ -50,7 +50,7 @@ class Transaction(BaseModel):
     Description: str = Field(min_length=5, max_length=255)
 
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "Title": "transaction",
                 "Category": 1,
@@ -59,5 +59,33 @@ class Transaction(BaseModel):
                 "Date": '02-10-2023',
                 "ownerid": 1,
                 "Description": "Description"
+            }
+        }
+        
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=5, max_length=15)
+    password: str = Field(min_length=4, max_length=255)
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "joell@test.co",
+                "password": "k2m=@[7C!sQX",
+            }
+        }
+
+    @validator('email')
+    def validate_email(cls, email):
+        if not re.match(r'^[\w\.-]+@[\w\.-]+$', email):
+            raise ValueError('Invalid email address')
+        return email
+    
+class User(BaseModel):
+    email: str = Field(min_length=5, max_length=15)
+    uid: str = Field(min_length=4, max_length=255)
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "email": "joel@test.co",
+                "uid": "111111111111",
             }
         }

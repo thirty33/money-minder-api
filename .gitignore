@@ -10,6 +10,8 @@ tutorial-env/Lib/
 tutorial-env/Scripts/
 tutorial-env/pyvenv.cfg
 example-env/
+threeeight-env/
+threeeight-env/*
 
 # Runtime data
 pids

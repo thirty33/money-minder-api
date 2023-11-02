@@ -48,13 +48,16 @@ class TableClient(metaclass=SingletonMeta):
         self.table = self.client.Table(
             os.environ.get('table_transaction_name'))
 
-    def manage_sucessfull_response(self, response):
+    def set_table(self, table):
+        self.table = self.client.Table(table)
+        
+    def manage_sucessfull_response(self, response, status_code=201):
         return JSONResponse(
             content={
                 'error': 'false',
-                'message': response
+                'data': response
             },
-            status_code=201
+            status_code=status_code
         )
 
     def manage_failed_response(self, err):
@@ -67,10 +70,15 @@ class TableClient(metaclass=SingletonMeta):
         )
 
     def put_item(self, item):
-        try:
-            response = self.table.put_item(Item=item)
-            print(json.dumps(response, indent=2))
-            return self.manage_sucessfull_response(response)
+        try:    
+            query_params = {
+                'Item': item,
+                # 'ReturnValues': 'ALL_NEW'
+            }
+            response = self.table.put_item(**query_params)
+            print('put_item', json.dumps(response, indent=2))
+            # return self.manage_sucessfull_response(response)
+            return self.manage_sucessfull_response(item)
         except ClientError as err:
             return self.manage_failed_response(err)
 
@@ -179,12 +187,27 @@ class TableClient(metaclass=SingletonMeta):
             response = self.table.update_item(**query_params)
 
             print('response', response)
-            return self.manage_sucessfull_response(response)
+            return self.manage_sucessfull_response(response, 200)
         
         except ClientError as err:
             return self.manage_failed_response(err)
 
-
+    def get_single_model(self, model):
+        try:
+            print('model', model)
+            query_params = {
+                'Key': {
+                    'Email': model['Email'],
+                    'Uid': model['Uid'],
+                },
+                'ProjectionExpression': 'Uid'
+            }
+            response = self.table.get_item(**query_params)
+            print('response', response)
+            return self.manage_sucessfull_response(response, status_code=200)
+        
+        except ClientError as err:
+            return self.manage_failed_response(err)
 
 tableClient = TableClient()
 tableClient.instance()

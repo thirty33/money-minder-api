@@ -367,5 +367,19 @@ Resources:
                       - iam:CreateServiceLinkedRole
                     Resource:
                       - !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ops.apigateway.amazonaws.com/AWSServiceRoleForAPIGateway
+            - PolicyName: ServerlessCognitoDeployPolicy
+              PolicyDocument:
+                Version: '2012-10-17'
+                Statement:
+                  - Effect: Allow
+                    Action:
+                      - cognito-idp:CreateUserPool
+                      - cognito-idp:CreateUserPoolClient
+                      - cognito-idp:DeleteUserPoolClient
+                      - cognito-idp:DeleteUserPool
+                      - cognito-idp:AdminCreateUser
+                      - cognito-idp:AdminInitiateAuth
+                      - cognito-idp:AdminSetUserPassword
+                    Resource: !Sub arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/*
                   
 
