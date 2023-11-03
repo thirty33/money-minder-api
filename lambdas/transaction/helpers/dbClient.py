@@ -91,6 +91,7 @@ class TableClient(metaclass=SingletonMeta):
         try:
             
             query_params = {
+                'IndexName': 'DateIndex',
                 'KeyConditionExpression': 'Title = :title',
                 'FilterExpression': 'MovementType = :movementType AND ownerid = :ownerid AND Bank = :bank AND Category = :category',
                 'ExpressionAttributeValues': {

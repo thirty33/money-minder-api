@@ -81,11 +81,22 @@ resources:
             AttributeType: S
           - AttributeName: Uid
             AttributeType: S
+          - AttributeName: DateTransaction
+            AttributeType: S
         KeySchema:
           - AttributeName: Title
             KeyType: HASH
           - AttributeName: Uid
             KeyType: RANGE
+        LocalSecondaryIndexes:
+          - IndexName: DateIndex
+            KeySchema:
+              - AttributeName: Title
+                KeyType: HASH
+              - AttributeName: DateTransaction
+                KeyType: RANGE  
+            Projection:
+              ProjectionType: ALL
         ProvisionedThroughput:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
