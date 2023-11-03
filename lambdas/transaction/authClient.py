@@ -6,9 +6,12 @@ import decimal
 import os
 from fastapi.responses import HTMLResponse, JSONResponse
 from boto3.dynamodb.conditions import Attr
-from fastapi import Depends
+from fastapi import Depends, HTTPException, Request, status
 import random
 import string
+import jwt
+from jwt import PyJWKClient
+import httpx
 
 class SingletonMeta(type):
     """
@@ -84,7 +87,7 @@ class AuthClient(metaclass=SingletonMeta):
                 set_password_response = self.admin_set_user_password(username, temporary_password)
 
             response['setPasswordResponse'] = set_password_response;
-            return response
+            return self.manage_sucessfull_response(response)
         
         except ClientError as err:
             # print('error', err.response['Error']['Message'])
@@ -101,10 +104,9 @@ class AuthClient(metaclass=SingletonMeta):
 
     def admin_set_user_password(self, username, password):
 
-        generated_password = self.generate_password(length=12, complexity='medium')
-
-        print('this is password', generated_password);
-
+        # generated_password = self.generate_password(length=12, complexity='medium')
+        generated_password = password
+        
         try:
             response = self.client.admin_set_user_password(
                 UserPoolId=self.user_pool_id,
@@ -135,3 +137,49 @@ class AuthClient(metaclass=SingletonMeta):
 
 authClient = AuthClient()
 authClient.instance()
+
+COGNITO_REGION = os.environ.get("AWS_REGION")
+COGNITO_USER_POOL_ID =  os.environ.get("user_pool_id")
+
+async def get_cognito_jwt_secret() -> str:
+    JWKS_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json"
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(JWKS_URL)
+
+    if response.status_code != 200:
+        raise Exception("Failed to fetch JWKS from Cognito")
+    
+    jwks = response.json()
+    for key_data in jwks["keys"]:
+        if key_data["alg"] == "RS256" and key_data["use"] == "sig":
+            key = jwk.construct(key_data)
+            return key.to_pem().decode("utf-8")
+
+    raise Exception("Failed to find a suitable public key in JWKS")
+
+        
+async def get_token(request: Request):
+    token = request.query_params.get("token")
+    
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is required")
+    return token
+
+# Cognito jwt auth validation
+async def get_current_user(token: str = Depends(get_token)) -> str:
+    JWKS_URL = f"https://cognito-idp.{COGNITO_REGION}.amazonaws.com/{COGNITO_USER_POOL_ID}/.well-known/jwks.json"
+    
+    client = PyJWKClient(JWKS_URL)
+    
+    try:
+        header = jwt.get_unverified_header(token)
+        key = client.get_signing_key(header["kid"])
+        public_key = key.key
+        payload = jwt.decode(token, public_key, algorithms=["RS256"])
+        return payload["sub"]
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
+    except jwt.InvalidSignatureError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired")
+        
