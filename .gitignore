@@ -103,4 +103,5 @@ package-lock.json
 
 /fast-env
 /fast-env/*
-
+/threeeight_env/
+/threeeight_env/*
