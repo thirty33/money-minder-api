@@ -1,4 +1,4 @@
-#!c:\projects\serverless-projects\money-minder-api\threeeight_env\scripts\python.exe
+#!C:\projects\serverless-projects\money-minder-api\threeeight_env\Scripts\python.exe
 
 import sys
 import json

@@ -12,7 +12,7 @@ import string
 import jwt
 from jwt import PyJWKClient
 import httpx
-
+import datetime 
 class SingletonMeta(type):
     """
     The Singleton class can be implemented in different ways in Python. Some
@@ -39,6 +39,11 @@ class AuthClient(metaclass=SingletonMeta):
         self.client = boto3.client('cognito-idp', region_name=os.getenv('AWS_REGION', False))
         self.user_pool_id = os.getenv('user_pool_id', False)
         self.client_id = os.getenv('client_id', False)
+
+    def serialize_datetime(self, obj): 
+        if isinstance(obj, datetime.datetime): 
+            return obj.isoformat() 
+        raise TypeError("Type not serializable") 
 
     def manage_sucessfull_response(self, response, status_code=201):
         return {

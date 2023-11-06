@@ -8,6 +8,7 @@ from mangum import Mangum
 import uuid
 import json
 
+
 # import jwt
 # from jwt import PyJWKClient
 # import httpx
@@ -72,7 +73,8 @@ app = FastAPI(
 @app.post('/transaction', tags=['transaction'])
 def create_transation(
     transaction: Transaction,
-    sub: str = Depends(get_current_user)
+    sub: str = Depends(get_current_user),
+    token: str = ''
 ):
     
     # print('type', type(uuid.uuid4()))
@@ -96,7 +98,8 @@ def list_transation(
     ownerid: int = 1,
     page: str = '1',
     date: str = '',
-    sub: str = Depends(get_current_user)
+    sub: str = Depends(get_current_user),
+    token: str = ''
 ):
 
     filters = {
@@ -111,14 +114,15 @@ def list_transation(
     return tableClient.get_item(filters)
 
 @app.delete('/transaction/{id}', tags=['transaction'])
-def delete_transaction(id: str, sub: str = Depends(get_current_user)):
+def delete_transaction(id: str, sub: str = Depends(get_current_user), token: str = ''):
     return tableClient.delete_item(id)
 
 @app.put('/transaction/{id}', tags=['transaction'], response_model=dict)
 def update_transaction(
     id: str,
     transaction: Transaction, 
-    sub: str = Depends(get_current_user)
+    sub: str = Depends(get_current_user),
+    token: str = ''
 ):
     return tableClient.update_item(id, transaction);
 
@@ -126,8 +130,8 @@ def update_transaction(
 @app.post('/user/create', tags=['user'])
 def create_user(
     login_request: LoginRequest,
-    token: str, 
-    sub: str = Depends(get_current_user)
+    # token: str, 
+    # sub: str = Depends(get_current_user)
 ):
     tableCLientResponse = {}
     data_dict = {}
@@ -143,10 +147,10 @@ def create_user(
         json_content = tableCLientResponse.body.decode()
         data_dict = json.loads(json_content)
     
-    # print('tableClient', tableCLientResponse)
+    # print('data_dict', data_dict)
 
     data = {
-        'create-user-cognito': createUserResponse,
+        'create-user-cognito': json.loads(json.dumps(createUserResponse, default=authClient.serialize_datetime)),
         'create-user-dynamo': data_dict
     }
     return tableClient.manage_sucessfull_response(data, 201)

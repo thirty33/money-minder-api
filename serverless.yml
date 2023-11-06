@@ -16,8 +16,8 @@ provider:
   #   BUCKET: !GetAtt S3Bucket.Arn
   #   SECRET_EGG: ${ssm:/SECRET_EGG}
   environment:
-    # user_pool_id: { Ref: UserPool }
-    # client_id: { Ref: UserClient }
+    user_pool_id: { Ref: UserPool }
+    client_id: { Ref: UserClient }
   iam:
     role:
       statements:
