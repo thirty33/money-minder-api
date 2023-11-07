@@ -10,8 +10,8 @@ provider:
   region: ${opt:region, 'us-west-2'}
   architecture: x86_64
     environment:
-    user_pool_id: { Ref: UserPool }
-    client_id: { Ref: UserClient }
+      user_pool_id: { Ref: UserPool }
+      client_id: { Ref: UserClient }
   iam:
     role:
       statements:
