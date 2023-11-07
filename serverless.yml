@@ -69,7 +69,7 @@ resources:
     Transaction:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${env:table_transaction_name, Transaction}
+        TableName: Transaction
         AttributeDefinitions:
           - AttributeName: Title
             AttributeType: S
@@ -97,7 +97,7 @@ resources:
     User:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${env:user_transaction_name, TransactionUser}
+        TableName: TransactionUser
         AttributeDefinitions:
           - AttributeName: Email
             AttributeType: S
