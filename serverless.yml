@@ -12,6 +12,10 @@ provider:
   environment:
     user_pool_id: { Ref: UserPool }
     client_id: { Ref: UserClient }
+    table_transaction_name: Transaction
+    user_transaction_name: TransactionUser
+    user_pool_id: ${opt:user_pool_id, ''}
+    client_id: ${opt:client_id, ''}
   iam:
     role:
       statements:
