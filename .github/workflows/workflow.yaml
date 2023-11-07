@@ -39,7 +39,7 @@ jobs:
         export AWS_SESSION_TOKEN=`echo $CREDS | jq -r '.Credentials.SessionToken'`
         export STAGE=${{secrets.AWS_DEV_STAGE}}
         export SLS_DEBUG="*"
-        npx sls deploy --stage ${{secrets.AWS_DEV_STAGE}} --region ${{secrets.AWS_DEFAULT_REGION}} --user_pool_id ${{secrets.USER_POOL_ID}} --client_id ${{secrets.CLIENT_ID}}
+        npx sls deploy --stage ${{secrets.AWS_DEV_STAGE}} --region ${{secrets.AWS_DEFAULT_REGION}}
       env:
         AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID_DEV}}
         AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY_DEV}}
