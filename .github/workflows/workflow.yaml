@@ -2,44 +2,9 @@ name: Deploy DEV
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ dev ]
 
 jobs:
-  # testing-changes:
-  #   runs-on: ubuntu-latest
-  #   name: Build/Test
-  #   steps:
-  #   - uses: actions/checkout@v2
-
-  #   - name: NPM - Install dependencies
-  #     if: steps.cached-npm-dependencies.outputs.cache-hit != 'true'
-  #     run: 'npm install'
-
-  #   - name: Run Tests
-  #     run: |
-  #       npm run test
-
-  build-js-layer-deps:
-    timeout-minutes: 15
-    runs-on: ubuntu-latest
-    name: Build SLS Layer - Prod
-    container:
-      image: "node:14-buster"
-    steps:
-      - uses: actions/checkout@v2
-
-      - run: |
-          npm install --production
-          mkdir nodejs
-          mv node_modules nodejs
-          apt update -y && apt install zip -y
-          zip -r nodejs.zip nodejs/
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: nodejsdeps
-          path: nodejs.zip
-
   deploy-env:
     permissions:
       pull-requests: write
@@ -47,10 +12,13 @@ jobs:
       packages: write
     name: Deploy Lambda
     runs-on: ubuntu-latest
-    # needs: testing-changes
-    needs: [build-js-layer-deps]
     steps:
     - uses: actions/checkout@v2.0.0
+    - uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+        cache: 'pip' # caching pip dependencies
+    - run: pip install -r requirements.txt
 
     - name: NPM - Load cached venv
       id: cached-npm-dependencies
@@ -63,14 +31,9 @@ jobs:
       if: steps.cached-npm-dependencies.outputs.cache-hit != 'true'
       run: 'npm install'
 
-    - uses: actions/download-artifact@v2
-      with:
-        name: nodejsdeps
-        path: app/
-    
     - name: Deploy using sls
       run: |
-        CREDS=`aws sts assume-role --role-arn arn:aws:iam::${{secrets.AWS_ACCOUNT_DEV_ID}}:role/serverless-permission-DeployerRole-1JOI1E68IC771 --role-session-name=gha_deployer`
+        CREDS=`aws sts assume-role --role-arn arn:aws:iam::${{secrets.AWS_ACCOUNT_DEV_ID}}:role/serverless-permissions-DeployerRole-${{secrets.DEPLOYER_ROLE_ID}} --role-session-name=gha_deployer`
         export AWS_ACCESS_KEY_ID=`echo $CREDS | jq -r '.Credentials.AccessKeyId'`
         export AWS_SECRET_ACCESS_KEY=`echo $CREDS | jq -r '.Credentials.SecretAccessKey'`
         export AWS_SESSION_TOKEN=`echo $CREDS | jq -r '.Credentials.SessionToken'`
@@ -78,8 +41,8 @@ jobs:
         export SLS_DEBUG="*"
         npx sls deploy --stage ${{secrets.AWS_DEV_STAGE}} --region ${{secrets.AWS_DEFAULT_REGION}}
       env:
-        AWS_ACCESS_KEY_ID: ${{secrets.AWS_DEV_ACCESS_KEY}}
-        AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_DEV_SECRET_KEY}}
+        AWS_ACCESS_KEY_ID: ${{secrets.AWS_ACCESS_KEY_ID_DEV}}
+        AWS_SECRET_ACCESS_KEY: ${{secrets.AWS_SECRET_ACCESS_KEY_DEV}}
         AWS_DEFAULT_REGION: ${{secrets.AWS_DEFAULT_REGION}}
         AWS_ACCOUNT_DEV_ID: ${{secrets.AWS_ACCOUNT_DEV_ID}}
 

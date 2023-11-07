@@ -9,13 +9,7 @@ provider:
   stage: ${opt:stage, 'dev'}
   region: ${opt:region, 'us-west-2'}
   architecture: x86_64
-  # apiGateway:
-  #   apiKeys:
-  #     - money-minder-primary-key
-  # environment:
-  #   BUCKET: !GetAtt S3Bucket.Arn
-  #   SECRET_EGG: ${ssm:/SECRET_EGG}
-  environment:
+    environment:
     user_pool_id: { Ref: UserPool }
     client_id: { Ref: UserClient }
   iam:
@@ -75,7 +69,7 @@ resources:
     Transaction:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${env:table_transaction_name}
+        TableName: ${env:table_transaction_name, Transaction}
         AttributeDefinitions:
           - AttributeName: Title
             AttributeType: S
@@ -103,7 +97,7 @@ resources:
     User:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: ${env:user_transaction_name}
+        TableName: ${env:user_transaction_name, TransactionUser}
         AttributeDefinitions:
           - AttributeName: Email
             AttributeType: S
@@ -142,11 +136,6 @@ resources:
           - "ADMIN_NO_SRP_AUTH"
 
 functions:
-  # custom-authorizer:
-  #   handler: lambdas/custom-authorizer/handler.authorize
-  #   package:
-  #     patterns:
-  #       - "lambdas/custom-authorizer/**"
   app:
     handler: lambdas/transaction/handler-transaction.handler
     runtime: python3.8
@@ -162,15 +151,6 @@ functions:
           method: any
           path: /{proxy+}
           cors: true
-          # authorizer:
-          #   name: PrivateAuthorizer
-          #   type: COGNITO_USER_POOLS
-          #   arn:
-          #     Fn::GetAtt:
-          #       - UserPool
-          #       - Arn
-          #   claims:
-          #     - email
   
 
 
