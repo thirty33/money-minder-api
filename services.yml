@@ -208,6 +208,7 @@ Resources:
                       - dynamodb:UpdateItem
                       - dynamodb:GetItem
                       - dynamodb:PutItem
+                      - dynamodb:Query
                     Resource:
                       - !Sub 'arn:aws:iam::${AWS::AccountId}:role/money-minder-api-*'
                       - !Sub 'arn:aws:iam::${AWS::AccountId}:role/money-minder-api-*/*'
@@ -290,6 +291,7 @@ Resources:
                       - dynamodb:UpdateItem
                       - dynamodb:GetItem
                       - dynamodb:PutItem
+                      - dynamodb:Query
                     Resource:
                       - !Sub 'arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*'
                       - !Sub 'arn:aws:dynamodb::${AWS::AccountId}:global-table/*'

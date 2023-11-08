@@ -21,6 +21,9 @@ provider:
           Action: 'dynamodb:*'
           Resource: !GetAtt Transaction.Arn
         - Effect: Allow
+          Action: 'dynamodb:*'
+          Resource: !Join [ "/", [ !GetAtt Transaction.Arn, "index/*"] ]
+        - Effect: Allow
           Action:
             - cognito-idp:AdminInitiateAuth
             - cognito-idp:AdminCreateUser
